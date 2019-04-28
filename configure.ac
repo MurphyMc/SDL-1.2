@@ -1684,6 +1684,19 @@ CheckDummyVideo()
     fi
 }
 
+dnl Set up the VNC video driver.
+CheckVNCVideo()
+{
+    AC_ARG_ENABLE(video-vnc,
+AC_HELP_STRING([--enable-video-vnc], [use vnc video driver [[default=no]]]),
+                  , enable_video_vnc=no)
+    if test x$enable_video_vnc = xyes; then
+        AC_DEFINE(SDL_VIDEO_DRIVER_VNC)
+        SOURCES="$SOURCES $srcdir/src/video/vnc/*.c"
+        have_video=yes
+    fi
+}
+
 dnl rcg04172001 Set up the mem video driver.
 CheckMemVideo()
 {
@@ -2430,6 +2443,7 @@ case "$host" in
         CheckVisibilityHidden
         CheckDummyVideo
         CheckMemVideo
+        CheckVNCVideo
         CheckDiskAudio
         CheckDummyAudio
         CheckDLOPEN
