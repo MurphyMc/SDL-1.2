@@ -1697,6 +1697,19 @@ AC_HELP_STRING([--enable-video-vnc], [use vnc video driver [[default=no]]]),
     fi
 }
 
+dnl Set up the sdluxer video driver.
+CheckSDLuxerVideo()
+{
+    AC_ARG_ENABLE(video-sdluxer,
+AC_HELP_STRING([--enable-video-sdluxer], [use sdluxer video driver [[default=no]]]),
+                  , enable_video_sdluxer=no)
+    if test x$enable_video_sdluxer = xyes; then
+        AC_DEFINE(SDL_VIDEO_DRIVER_SDLUXER)
+        SOURCES="$SOURCES $srcdir/src/video/sdluxer/*.c"
+        have_video=yes
+    fi
+}
+
 dnl rcg04172001 Set up the mem video driver.
 CheckMemVideo()
 {
@@ -2444,6 +2457,7 @@ case "$host" in
         CheckDummyVideo
         CheckMemVideo
         CheckVNCVideo
+        CheckSDLuxerVideo
         CheckDiskAudio
         CheckDummyAudio
         CheckDLOPEN
