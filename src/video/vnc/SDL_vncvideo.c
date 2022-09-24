@@ -203,6 +203,17 @@ static void VNC_PumpEvents(_THIS)
 }
 
 
+static void VNC_SetCaption(_THIS, const char *title, const char *icon)
+{
+  if (!this->hidden) return;
+
+  free(this->hidden->caption);
+  this->hidden->caption = strdup(title);
+  if (this->hidden->screen)
+    this->hidden->screen->desktopName = strdup(title);
+}
+
+
 static WMcursor * VNC_CreateWMCursor(_THIS, Uint8 *data, Uint8 *mask,
                                      int w, int h, int hot_x, int hot_y)
 {
@@ -302,7 +313,7 @@ static SDL_VideoDevice *VNC_CreateDevice(int devindex)
   device->UnlockHWSurface = VNC_UnlockHWSurface;
   device->FlipHWSurface = VNC_FlipHWSurface;
   device->FreeHWSurface = VNC_FreeHWSurface;
-  device->SetCaption = NULL;
+  device->SetCaption = VNC_SetCaption;
   device->SetIcon = NULL;
   device->IconifyWindow = NULL;
   device->GrabInput = NULL;
@@ -488,8 +499,13 @@ SDL_Surface *VNC_SetVideoMode(_THIS, SDL_Surface *current,
     VNC_ShowWMCursor(this, (WMcursor *)this->hidden->current_cursor);
   }
 
+  if (!this->hidden->caption)
+  {
+    this->hidden->caption = strdup("SDL App");
+  }
+  sc->desktopName = this->hidden->caption;
+
   sc->frameBuffer = VNC_buffer;
-  sc->desktopName = "SDL App";
   //sc->alwaysShared = TRUE;
   sc->ptrAddEvent = on_ptr;
   sc->kbdAddEvent = VNC_on_key;
@@ -570,6 +586,9 @@ void VNC_VideoQuit(_THIS)
     rfbFreeCursor(this->hidden->no_cursor);
     this->hidden->no_cursor = NULL;
   }
+
+  // Should probably cleanup rfb "sc" somewhere...
+  free(this->hidden->caption);
 
   //SDL_DestroyMutex(VNC_mutex);
 }

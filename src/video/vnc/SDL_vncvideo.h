@@ -47,6 +47,7 @@ struct SDL_PrivateVideoData {
   SDL_Rect *SDL_modelist[SDL_NUMMODES+1];
 
   void *buffer;
+  char *caption; // Current window caption
   int buffer_size;
   int w, h;
 
