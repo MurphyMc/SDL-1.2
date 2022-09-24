@@ -52,6 +52,8 @@ struct SDL_PrivateVideoData {
 
   int client_count;
   rfbScreenInfoPtr screen;
+  rfbCursorPtr no_cursor;
+  rfbCursorPtr current_cursor;
 
   int last_curx;
   int last_cury;

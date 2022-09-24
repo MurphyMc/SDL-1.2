@@ -203,6 +203,53 @@ static void VNC_PumpEvents(_THIS)
 }
 
 
+static WMcursor * VNC_CreateWMCursor(_THIS, Uint8 *data, Uint8 *mask,
+                                     int w, int h, int hot_x, int hot_y)
+{
+  // We could no doubt do this more efficiently by creating the VNC cursor
+  // by hand instead of using the helper.
+  char * xdata = malloc(w*h);
+  char * xmask = malloc(w*h);
+  int W = (w+7)/8;
+  for (int y = 0; y < h; ++y)
+  {
+    for (int x = 0; x < w; ++x)
+    {
+      xdata[y*w + x] = (data[y*W+x/8] & (128 >> (x%8))) ? 'x':' ';
+      xmask[y*w + x] = (mask[y*W+x/8] & (128 >> (x%8))) ? 'x':' ';
+    }
+  }
+  rfbCursorPtr c = rfbMakeXCursor(w, h, xdata, xmask);
+  c->xhot = hot_x; c->yhot = hot_y;
+  c->cleanup = FALSE;
+  return (WMcursor*)c;
+}
+
+static int VNC_ShowWMCursor(_THIS, WMcursor *cursor)
+{
+  rfbCursorPtr c = (void*)cursor;
+  if (!c) c = this->hidden->no_cursor;
+  this->hidden->current_cursor = c;
+  if (!this->hidden->screen) return 0;
+  rfbSetCursor(this->hidden->screen, c);
+  return 1;
+}
+
+static void VNC_FreeWMCursor(_THIS, WMcursor *cursor)
+{
+  if ((rfbCursorPtr)cursor == this->hidden->no_cursor) return;
+  if (this->hidden->screen)
+  {
+    if (this->hidden->current_cursor == (rfbCursorPtr)cursor)
+    {
+      VNC_ShowWMCursor(this, NULL);
+    }
+  }
+  ((rfbCursorPtr)cursor)->cleanup = TRUE;
+  rfbFreeCursor((rfbCursorPtr)cursor);
+}
+
+
 /* Cache the VideoDevice struct */
 //static struct SDL_VideoDevice *local_this;
 
@@ -262,8 +309,18 @@ static SDL_VideoDevice *VNC_CreateDevice(int devindex)
   device->GetWMInfo = NULL;
   device->InitOSKeymap = VNC_InitOSKeymap;
   device->PumpEvents = VNC_PumpEvents;
+  device->FreeWMCursor = VNC_FreeWMCursor;
+  device->CreateWMCursor = VNC_CreateWMCursor;
+  device->ShowWMCursor = VNC_ShowWMCursor;
 
   device->free = VNC_DeleteDevice;
+
+  char nothing[] = " ";
+  rfbCursorPtr no_cursor = rfbMakeXCursor(1, 1, nothing, nothing);
+  no_cursor->xhot = 0; no_cursor->yhot = 0;
+  no_cursor->cleanup = FALSE;
+  device->hidden->no_cursor = no_cursor;
+  device->hidden->current_cursor = NULL;
 
   return device;
 }
@@ -426,6 +483,10 @@ SDL_Surface *VNC_SetVideoMode(_THIS, SDL_Surface *current,
     SDL_SetError("Couldn't get VNC screen");
     return NULL;
   }
+  if (this->hidden->current_cursor)
+  {
+    VNC_ShowWMCursor(this, (WMcursor *)this->hidden->current_cursor);
+  }
 
   sc->frameBuffer = VNC_buffer;
   sc->desktopName = "SDL App";
@@ -501,6 +562,13 @@ void VNC_VideoQuit(_THIS)
   if ( VNC_buffer ) {
     // Will be freed by surface, so don't free here: free( VNC_buffer );
     VNC_buffer = NULL;
+  }
+
+  if ( this->hidden->no_cursor )
+  {
+    this->hidden->no_cursor->cleanup = TRUE;
+    rfbFreeCursor(this->hidden->no_cursor);
+    this->hidden->no_cursor = NULL;
   }
 
   //SDL_DestroyMutex(VNC_mutex);
