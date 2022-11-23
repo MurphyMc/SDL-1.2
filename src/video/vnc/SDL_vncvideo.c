@@ -126,7 +126,7 @@ static int ParseCommandLine(char *cmdline, char **argv)
 
 static int getenvint (const char * var, int def)
 {
-  const char * v = getenv(var);
+  const char * v = SDL_getenv(var);
   if (!v) return def;
   return strtol(v, NULL, 10);
 }
