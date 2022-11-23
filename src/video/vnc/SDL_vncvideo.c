@@ -514,7 +514,7 @@ SDL_Surface *VNC_SetVideoMode(_THIS, SDL_Surface *current,
 
   rfbInitServer(sc);
 
-  printf("VNC Video format - size:%ix%i bpp:%i realbpp:%i realwidth:%i pitch:%i\n", width, height, bpp, realbpp, realwidth, pitch);
+  rfbLog("VNC Video format - size:%ix%i bpp:%i realbpp:%i realwidth:%i pitch:%i\n", width, height, bpp, realbpp, realwidth, pitch);
 
   /* We're done */
   return current;
