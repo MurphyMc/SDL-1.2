@@ -479,6 +479,9 @@ SDL_Surface *VNC_SetVideoMode(_THIS, SDL_Surface *current,
   this->hidden->keyframe_delay = getenvint("SDL_VID_VNC_FRAMEDELAY", -1);
 
 
+  char * logstr = SDL_getenv("SDL_VID_VNC_LOG");
+  if (logstr && strlen(logstr)) rfbLogEnable(atoi(logstr));
+
   char * cmdline = SDL_getenv("SDL_VID_VNC_CMDLINE");
   if (!cmdline) cmdline = "";
   char ** argv = malloc(sizeof(char*) * strlen(cmdline)/2 + 2);
